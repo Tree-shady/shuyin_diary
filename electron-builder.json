@@ -1,0 +1,18 @@
+{
+  "appId": "com.shuyin.diary",
+  "productName": "Shuyin Diary",
+  "directories": {
+    "output": "release"
+  },
+  "npmRebuild": false,
+  "files": [
+    "dist/**/*",
+    "package.json"
+  ],
+  "asarUnpack": [
+    "node_modules/better-sqlite3/**"
+  ],
+  "mac": { "target": "dmg" },
+  "win": { "target": "nsis" },
+  "linux": { "target": "AppImage" }
+}

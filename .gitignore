@@ -1,0 +1,72 @@
+# =========================
+# 依赖
+# =========================
+node_modules/
+
+# =========================
+# 构建产物
+# =========================
+# 主进程/渲染进程编译输出（tsc + vite）
+dist/
+# electron-builder 打包输出（安装包、win-unpacked 等）
+release/
+# TypeScript 增量构建信息
+*.tsbuildinfo
+
+# =========================
+# 日志与临时文件
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tmp
+*.temp
+
+# =========================
+# 环境变量与本地密钥
+# =========================
+.env
+.env.local
+.env.*.local
+
+# =========================
+# Electron / 运行时缓存
+# =================================================================
+# electron-builder 缓存（electron 下载、winCodeSign 等）
+.cache/
+# electron-rebuild / node-gyp
+build/Release/
+# Electron 运行时生成的用户数据（本地测试数据，勿提交）
+userData/
+
+# =========================
+# 编辑器 / IDE
+# =========================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =========================
+# 操作系统
+# =========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# =========================
+# 其他
+# =========================
+coverage/
+.nyc_output/
+*.zip

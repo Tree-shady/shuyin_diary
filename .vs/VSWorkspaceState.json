@@ -1,0 +1,13 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\dist",
+    "\\src",
+    "\\src\\main",
+    "\\src\\renderer",
+    "\\src\\renderer\\src",
+    "\\src\\shared"
+  ],
+  "SelectedNode": "\\src\\renderer\\src\\main.tsx",
+  "PreviewInSolutionExplorer": false
+}
