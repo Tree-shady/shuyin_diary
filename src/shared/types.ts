@@ -8,6 +8,8 @@ export interface DiaryEntry {
   tags: string[];
   created_at: string;
   updated_at: string;
+  /** 软删除时间；null 表示未删除 */
+  deleted_at: string | null;
 }
 
 /** 新建/更新日记时的入参 */
@@ -25,6 +27,8 @@ export interface DiaryQuery {
   tag?: string;
   startDate?: string; // YYYY-MM-DD
   endDate?: string; // YYYY-MM-DD
+  /** true 时仅列出回收站（已软删除）的日记 */
+  trash?: boolean;
 }
 
 export interface Tag {

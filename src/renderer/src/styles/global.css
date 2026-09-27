@@ -451,3 +451,346 @@ button {
 .content-input::placeholder {
   color: var(--text-secondary);
 }
+
+/* ============ 侧栏 tab 与回收站 ============ */
+.sidebar-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 12px 0;
+}
+.sidebar-tab {
+  flex: 1;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sidebar-tab:hover {
+  color: var(--primary);
+}
+.sidebar-tab.active {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  font-weight: 600;
+}
+
+.trash-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  border-radius: 10px;
+}
+.trash-item:hover {
+  background: var(--hover);
+}
+.trash-item-main {
+  flex: 1;
+  min-width: 0;
+}
+.trash-item-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.trash-item-actions .btn {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+.trash-footer {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+}
+
+/* ============ 锁屏 ============ */
+.lock-screen {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+.lock-card {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.lock-emoji {
+  font-size: 44px;
+}
+.lock-card h1 {
+  margin: 0;
+  font-size: 18px;
+}
+.lock-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  text-align: center;
+  font-size: 15px;
+  letter-spacing: 2px;
+  transition: border-color 0.15s ease;
+}
+.lock-input:focus {
+  border-color: var(--primary);
+}
+.lock-error {
+  color: var(--danger);
+  font-size: 13px;
+}
+.lock-btn {
+  width: 100%;
+}
+
+/* ============ 设置弹窗 ============ */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+.modal {
+  width: 360px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 16px 20px 20px;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 16px;
+  font-weight: 700;
+}
+.modal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 0 4px;
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.modal-section h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.modal-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.modal-input {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.modal-input:focus {
+  border-color: var(--primary);
+}
+.modal-select {
+  align-self: flex-start;
+  min-width: 120px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.modal-message {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.modal-message.error {
+  color: var(--danger);
+  background: rgba(229, 88, 77, 0.08);
+}
+.modal-message.ok {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+/* ============ Markdown 编辑/预览切换 ============ */
+.md-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.md-toggle button {
+  height: 28px;
+  padding: 0 14px;
+  border: none;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.md-toggle button + button {
+  border-left: 1px solid var(--border);
+}
+.md-toggle button.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ============ Markdown 预览区 ============ */
+.markdown-preview {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.75;
+  word-break: break-word;
+}
+.markdown-preview > :first-child {
+  margin-top: 0;
+}
+.markdown-preview > :last-child {
+  margin-bottom: 0;
+}
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  margin: 1.2em 0 0.5em;
+  line-height: 1.35;
+}
+.markdown-preview h1 {
+  font-size: 1.6em;
+}
+.markdown-preview h2 {
+  font-size: 1.35em;
+}
+.markdown-preview h3 {
+  font-size: 1.18em;
+}
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  font-size: 1em;
+}
+.markdown-preview p {
+  margin: 0.6em 0;
+}
+.markdown-preview ul,
+.markdown-preview ol {
+  margin: 0.6em 0;
+  padding-left: 1.6em;
+}
+.markdown-preview li {
+  margin: 0.25em 0;
+}
+.markdown-preview blockquote {
+  margin: 0.8em 0;
+  padding: 4px 14px;
+  border-left: 3px solid var(--primary);
+  background: var(--primary-soft);
+  border-radius: 0 6px 6px 0;
+  color: var(--text-secondary);
+}
+.markdown-preview blockquote p {
+  margin: 0.3em 0;
+}
+.markdown-preview code {
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--hover);
+  font-family: 'Cascadia Code', Consolas, 'Courier New', monospace;
+  font-size: 0.9em;
+}
+.markdown-preview pre {
+  margin: 0.8em 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--hover);
+  overflow-x: auto;
+}
+.markdown-preview pre code {
+  padding: 0;
+  background: none;
+}
+.markdown-preview a {
+  color: var(--primary);
+  text-decoration: none;
+}
+.markdown-preview a:hover {
+  text-decoration: underline;
+}
+.markdown-preview img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+.markdown-preview hr {
+  margin: 1.2em 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+.markdown-preview table {
+  margin: 0.8em 0;
+  border-collapse: collapse;
+  width: 100%;
+}
+.markdown-preview th,
+.markdown-preview td {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.markdown-preview th {
+  background: var(--hover);
+  font-weight: 600;
+}

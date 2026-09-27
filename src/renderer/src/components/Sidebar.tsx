@@ -8,9 +8,14 @@ export function Sidebar() {
   const selectedId = useDiaryStore((s) => s.selectedId);
   const keyword = useDiaryStore((s) => s.keyword);
   const filterTag = useDiaryStore((s) => s.filterTag);
+  const trashMode = useDiaryStore((s) => s.trashMode);
   const select = useDiaryStore((s) => s.select);
   const setKeyword = useDiaryStore((s) => s.setKeyword);
   const setFilterTag = useDiaryStore((s) => s.setFilterTag);
+  const setTrashMode = useDiaryStore((s) => s.setTrashMode);
+  const restore = useDiaryStore((s) => s.restore);
+  const purge = useDiaryStore((s) => s.purge);
+  const emptyTrash = useDiaryStore((s) => s.emptyTrash);
 
   const tagCounts = useMemo(() => {
     const map = new Map<string, number>();
@@ -20,19 +25,47 @@ export function Sidebar() {
     return [...map.entries()].map(([name, count]) => ({ name, count }));
   }, [diaries]);
 
+  const handlePurge = (id: number) => {
+    if (window.confirm('彻底删除后无法恢复，确定吗？')) void purge(id);
+  };
+
+  const handleEmptyTrash = () => {
+    if (
+      diaries.length > 0 &&
+      window.confirm('将永久清空回收站中的全部日记，确定吗？')
+    ) {
+      void emptyTrash();
+    }
+  };
+
   return (
     <aside className="sidebar">
+      <div className="sidebar-tabs">
+        <button
+          className={`sidebar-tab ${!trashMode ? 'active' : ''}`}
+          onClick={() => setTrashMode(false)}
+        >
+          📝 日记
+        </button>
+        <button
+          className={`sidebar-tab ${trashMode ? 'active' : ''}`}
+          onClick={() => setTrashMode(true)}
+        >
+          🗑️ 回收站
+        </button>
+      </div>
+
       <div className="search-box">
         <input
           className="search-input"
           type="search"
-          placeholder="🔍 搜索日记内容…"
+          placeholder={trashMode ? '🔍 搜索回收站…' : '🔍 搜索日记内容…'}
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />
       </div>
 
-      {tagCounts.length > 0 && (
+      {!trashMode && tagCounts.length > 0 && (
         <div className="tag-filter">
           <button
             className={`tag-chip ${filterTag === null ? 'active' : ''}`}
@@ -56,33 +89,81 @@ export function Sidebar() {
       <div className="diary-list">
         {diaries.length === 0 && (
           <div className="list-empty">
-            {keyword || filterTag ? '没有符合条件的日记' : '还没有日记，点击「新建」开始吧'}
+            {trashMode
+              ? '回收站是空的'
+              : keyword || filterTag
+                ? '没有符合条件的日记'
+                : '还没有日记，点击「新建」开始吧'}
           </div>
         )}
-        {diaries.map((d) => {
-          const mood = MOODS.find((m) => m.value === d.mood);
-          return (
-            <button
-              key={d.id}
-              className={`diary-item ${selectedId === d.id ? 'active' : ''}`}
-              onClick={() => select(d.id)}
-            >
-              <div className="diary-item-title">
-                {mood && <span className="diary-mood">{mood.emoji}</span>}
-                {d.title || '无标题'}
+
+        {trashMode
+          ? diaries.map((d) => (
+              <div key={d.id} className="trash-item">
+                <div className="trash-item-main">
+                  <div className="diary-item-title">{d.title || '无标题'}</div>
+                  <div className="diary-item-footer">
+                    <span>{formatDay(d.created_at)}</span>
+                    {d.tags.length > 0 && (
+                      <span className="diary-item-tags">
+                        {d.tags
+                          .slice(0, 3)
+                          .map((t) => `#${t}`)
+                          .join(' ')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="trash-item-actions">
+                  <button className="btn" onClick={() => void restore(d.id)}>
+                    恢复
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handlePurge(d.id)}
+                  >
+                    删除
+                  </button>
+                </div>
               </div>
-              <div className="diary-item-excerpt">{excerpt(d.content) || '（暂无正文）'}</div>
-              <div className="diary-item-footer">
-                <span>{formatDay(d.created_at)}</span>
-                {d.tags.length > 0 && (
-                  <span className="diary-item-tags">
-                    {d.tags.slice(0, 3).map((t) => `#${t}`).join(' ')}
-                  </span>
-                )}
-              </div>
+            ))
+          : diaries.map((d) => {
+              const mood = MOODS.find((m) => m.value === d.mood);
+              return (
+                <button
+                  key={d.id}
+                  className={`diary-item ${selectedId === d.id ? 'active' : ''}`}
+                  onClick={() => select(d.id)}
+                >
+                  <div className="diary-item-title">
+                    {mood && <span className="diary-mood">{mood.emoji}</span>}
+                    {d.title || '无标题'}
+                  </div>
+                  <div className="diary-item-excerpt">
+                    {excerpt(d.content) || '（暂无正文）'}
+                  </div>
+                  <div className="diary-item-footer">
+                    <span>{formatDay(d.created_at)}</span>
+                    {d.tags.length > 0 && (
+                      <span className="diary-item-tags">
+                        {d.tags
+                          .slice(0, 3)
+                          .map((t) => `#${t}`)
+                          .join(' ')}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+
+        {trashMode && diaries.length > 0 && (
+          <div className="trash-footer">
+            <button className="btn btn-danger" onClick={handleEmptyTrash}>
+              清空回收站
             </button>
-          );
-        })}
+          </div>
+        )}
       </div>
     </aside>
   );

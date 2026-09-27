@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { api } from '../api';
 import { useDiaryStore } from '../store/diaryStore';
 import { MOODS, WEATHERS } from '../../../shared/constants';
@@ -41,11 +43,13 @@ export function Editor() {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState('');
+  const [previewing, setPreviewing] = useState(false);
   const lastSynced = useRef('');
   const draftRef = useRef(draft);
   const selectedIdRef = useRef<number | null>(null);
   const prevIdRef = useRef<number | null>(null);
   const closeRetried = useRef(false);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 保存并同步状态；防抖、切换 flush、关窗 flush 共用
   const persist = useCallback(
@@ -117,12 +121,29 @@ export function Editor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
+  // 注册紧急 flush：手动锁定前保存未落库的修改
+  useEffect(() => {
+    const flush = async (): Promise<void> => {
+      const id = selectedIdRef.current;
+      const pending = draftRef.current;
+      if (id === null || JSON.stringify(pending) === lastSynced.current) return;
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+      }
+      await persist(id, pending);
+    };
+    useDiaryStore.getState().registerFlush(flush);
+    return () => useDiaryStore.getState().registerFlush(null);
+  }, [persist]);
+
   // 自动保存：内容变化后防抖 800ms
   useEffect(() => {
     if (selectedId === null) return;
     if (JSON.stringify(draft) === lastSynced.current) return;
 
     const timer = setTimeout(() => void persist(selectedId, draft), 800);
+    debounceTimer.current = timer;
     return () => clearTimeout(timer);
   }, [draft, selectedId, persist]);
 
@@ -148,6 +169,12 @@ export function Editor() {
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [persist]);
+
+  // Markdown 渲染：marked 解析 + DOMPurify 消毒，防 XSS
+  const previewHtml = useMemo(
+    () => DOMPurify.sanitize(marked.parse(draft.content) as string),
+    [draft.content],
+  );
 
   if (selectedId === null) return <EmptyState />;
 
@@ -198,6 +225,20 @@ export function Editor() {
         <span className={`save-status ${saving ? 'saving' : ''}`}>
           {saving ? '保存中…' : savedAt ? `已保存 ${formatDateTime(savedAt)}` : ''}
         </span>
+        <div className="md-toggle">
+          <button
+            className={!previewing ? 'active' : ''}
+            onClick={() => setPreviewing(false)}
+          >
+            编辑
+          </button>
+          <button
+            className={previewing ? 'active' : ''}
+            onClick={() => setPreviewing(true)}
+          >
+            预览
+          </button>
+        </div>
       </div>
 
       <input
@@ -237,12 +278,19 @@ export function Editor() {
         />
       </div>
 
-      <textarea
-        className="content-input"
-        placeholder="今天发生了什么？支持 Markdown 语法…"
-        value={draft.content}
-        onChange={(e) => patch({ content: e.target.value })}
-      />
+      {previewing ? (
+        <div
+          className="markdown-preview"
+          dangerouslySetInnerHTML={{ __html: previewHtml }}
+        />
+      ) : (
+        <textarea
+          className="content-input"
+          placeholder="今天发生了什么？支持 Markdown 语法…"
+          value={draft.content}
+          onChange={(e) => patch({ content: e.target.value })}
+        />
+      )}
     </section>
   );
 }

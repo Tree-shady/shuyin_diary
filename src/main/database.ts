@@ -18,6 +18,7 @@ interface DiaryRow {
   tags: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 }
 
 interface SettingRow {
@@ -40,7 +41,8 @@ export function initDatabase(dbPath: string): void {
       weather TEXT,
       tags TEXT,
       created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT
     );
 
     CREATE TABLE IF NOT EXISTS tag (
@@ -54,6 +56,16 @@ export function initDatabase(dbPath: string): void {
       value TEXT
     );
   `);
+
+  // 存量库迁移：补 deleted_at 列（软删除/回收站）
+  const columns = db.pragma('table_info(diary)') as { name: string }[];
+  if (!columns.some((c) => c.name === 'deleted_at')) {
+    db.exec('ALTER TABLE diary ADD COLUMN deleted_at TEXT');
+  }
+
+  // 自动清理：回收站中超过 30 天的日记永久删除
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  db.prepare('DELETE FROM diary WHERE deleted_at IS NOT NULL AND deleted_at < ?').run(cutoff);
 }
 
 function rowToEntry(row: DiaryRow): DiaryEntry {
@@ -66,6 +78,7 @@ function rowToEntry(row: DiaryRow): DiaryEntry {
     tags: row.tags ? (JSON.parse(row.tags) as string[]) : [],
     created_at: row.created_at,
     updated_at: row.updated_at,
+    deleted_at: row.deleted_at,
   };
 }
 
@@ -128,9 +141,40 @@ export function updateDiary(id: number, input: DiaryInput): DiaryEntry | null {
   return getDiary(id);
 }
 
+/** 删除日记：软删除，移入回收站 */
 export function deleteDiary(id: number): boolean {
-  const result = db.prepare('DELETE FROM diary WHERE id = ?').run(id);
+  const result = db
+    .prepare(
+      'UPDATE diary SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL',
+    )
+    .run(new Date().toISOString(), id);
   return result.changes > 0;
+}
+
+/** 从回收站恢复日记 */
+export function restoreDiary(id: number): boolean {
+  const result = db
+    .prepare(
+      'UPDATE diary SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL',
+    )
+    .run(id);
+  return result.changes > 0;
+}
+
+/** 彻底删除回收站中的日记 */
+export function purgeDiary(id: number): boolean {
+  const result = db
+    .prepare('DELETE FROM diary WHERE id = ? AND deleted_at IS NOT NULL')
+    .run(id);
+  return result.changes > 0;
+}
+
+/** 清空回收站，返回删除条数 */
+export function emptyTrash(): number {
+  const result = db
+    .prepare('DELETE FROM diary WHERE deleted_at IS NOT NULL')
+    .run();
+  return result.changes;
 }
 
 export function getDiary(id: number): DiaryEntry | null {
@@ -143,7 +187,11 @@ export function getDiary(id: number): DiaryEntry | null {
 /** 查询日记：全部解密后在内存中按条件过滤（个人日记数据量适用） */
 export function listDiaries(query: DiaryQuery = {}): DiaryEntry[] {
   const rows = db
-    .prepare('SELECT * FROM diary ORDER BY created_at DESC')
+    .prepare(
+      `SELECT * FROM diary WHERE deleted_at IS ${
+        query.trash ? 'NOT NULL' : 'NULL'
+      } ORDER BY created_at DESC`,
+    )
     .all() as DiaryRow[];
 
   const keyword = query.keyword?.trim().toLowerCase();
@@ -208,4 +256,8 @@ export function setSetting(key: string, value: string): void {
     `INSERT INTO settings (key, value) VALUES (?, ?)
      ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
   ).run(key, value);
+}
+
+export function deleteSetting(key: string): void {
+  db.prepare('DELETE FROM settings WHERE key = ?').run(key);
 }
