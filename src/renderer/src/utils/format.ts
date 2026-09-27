@@ -1,3 +1,5 @@
+import { toLocalDateKey } from '../../../shared/datetime';
+
 const pad = (n: number): string => String(n).padStart(2, '0');
 
 /** ISO 时间 -> YYYY-MM-DD HH:mm */
@@ -8,9 +10,9 @@ export function formatDateTime(iso: string): string {
   )}:${pad(d.getMinutes())}`;
 }
 
-/** ISO 时间 -> YYYY-MM-DD */
+/** ISO 时间 -> 本地日期 YYYY-MM-DD */
 export function formatDay(iso: string): string {
-  return iso.slice(0, 10);
+  return toLocalDateKey(iso);
 }
 
 /** 截取正文纯文本摘要 */

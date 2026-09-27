@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import { useDiaryStore } from '../store/diaryStore';
 import { MOODS, WEATHERS } from '../../../shared/constants';
@@ -42,9 +42,62 @@ export function Editor() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState('');
   const lastSynced = useRef('');
+  const draftRef = useRef(draft);
+  const selectedIdRef = useRef<number | null>(null);
+  const prevIdRef = useRef<number | null>(null);
+  const closeRetried = useRef(false);
 
-  // 切换选中日记时载入草稿（仅在 selectedId 变化时执行）
+  // 保存并同步状态；防抖、切换 flush、关窗 flush 共用
+  const persist = useCallback(
+    async (id: number, data: Draft): Promise<void> => {
+      setSaving(true);
+      try {
+        const updated = await api.updateDiary(id, data);
+        await refresh();
+        const snapshot = JSON.stringify(data);
+        const current = JSON.stringify(draftRef.current);
+        if (current === snapshot) {
+          // 保存期间草稿未再变化：直接对账
+          lastSynced.current = snapshot;
+          if (selectedIdRef.current === id && updated) {
+            setSavedAt(updated.updated_at);
+          }
+        } else if (
+          selectedIdRef.current === id &&
+          current === lastSynced.current
+        ) {
+          // 已切走又切回、且草稿停在旧载入：用已保存内容恢复编辑器
+          setDraft(structuredClone(data));
+          lastSynced.current = snapshot;
+          if (updated) setSavedAt(updated.updated_at);
+        }
+      } catch (err) {
+        console.error('自动保存失败', err);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [refresh],
+  );
+
+  // 保持最新草稿引用，供 persist / flush 读取
   useEffect(() => {
+    draftRef.current = draft;
+  });
+
+  // 切换选中日记：先把上一篇未保存的修改 flush 落库，再载入新草稿
+  useEffect(() => {
+    const prevId = prevIdRef.current;
+    prevIdRef.current = selectedId;
+    selectedIdRef.current = selectedId;
+
+    if (prevId !== null && prevId !== selectedId) {
+      const pending = draftRef.current;
+      if (JSON.stringify(pending) !== lastSynced.current) {
+        void persist(prevId, pending);
+      }
+    }
+
     if (entry) {
       const next: Draft = {
         title: entry.title,
@@ -69,20 +122,32 @@ export function Editor() {
     if (selectedId === null) return;
     if (JSON.stringify(draft) === lastSynced.current) return;
 
-    const timer = setTimeout(async () => {
-      setSaving(true);
-      try {
-        const updated = await api.updateDiary(selectedId, draft);
-        lastSynced.current = JSON.stringify(draft);
-        if (updated) setSavedAt(updated.updated_at);
-        await refresh();
-      } finally {
-        setSaving(false);
-      }
-    }, 800);
-
+    const timer = setTimeout(() => void persist(selectedId, draft), 800);
     return () => clearTimeout(timer);
-  }, [draft, selectedId, refresh]);
+  }, [draft, selectedId, persist]);
+
+  // 关窗兜底：有未保存修改时先落库再放行关闭
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      const id = selectedIdRef.current;
+      const pending = draftRef.current;
+      if (
+        id === null ||
+        closeRetried.current ||
+        JSON.stringify(pending) === lastSynced.current
+      ) {
+        return;
+      }
+      e.preventDefault();
+      e.returnValue = '';
+      void persist(id, pending).finally(() => {
+        closeRetried.current = true;
+        window.close();
+      });
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [persist]);
 
   if (selectedId === null) return <EmptyState />;
 

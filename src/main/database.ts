@@ -6,6 +6,7 @@ import type {
   Tag,
 } from '../shared/types';
 import { decrypt, encrypt } from './encryption';
+import { toLocalDateKey } from '../shared/datetime';
 
 /** 数据库中的原始行（title/content 为密文） */
 interface DiaryRow {
@@ -154,7 +155,7 @@ export function listDiaries(query: DiaryQuery = {}): DiaryEntry[] {
     .filter((entry) => {
       if (query.tag && !entry.tags.includes(query.tag)) return false;
 
-      const day = entry.created_at.slice(0, 10);
+      const day = toLocalDateKey(entry.created_at);
       if (start && day < start) return false;
       if (end && day > end) return false;
 

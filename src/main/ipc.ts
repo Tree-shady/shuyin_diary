@@ -9,6 +9,7 @@ import type {
   ExportResult,
 } from '../shared/types';
 import * as db from './database';
+import { toLocalDateKey } from '../shared/datetime';
 
 function requireObject(value: unknown): Record<string, unknown> {
   if (typeof value !== 'object' || value === null) {
@@ -123,7 +124,7 @@ export function registerIpcHandlers(): void {
       const win = BrowserWindow.fromWebContents(event.sender);
       const saveOptions = {
         title: '导出日记',
-        defaultPath: `diary-${new Date().toISOString().slice(0, 10)}.${ext}`,
+        defaultPath: `diary-${toLocalDateKey(new Date().toISOString())}.${ext}`,
         filters: [
           {
             name: fmt === 'json' ? 'JSON 文件' : 'Markdown 文件',
